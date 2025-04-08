@@ -23,6 +23,7 @@ jobs:
 
       - name: Build with Maven
         run: mvn clean install
+        working-directory: BankingSystem  # 👈 Point to where pom.xml is
 
   test:
     name: ✅ Run JUnit Tests
@@ -41,13 +42,14 @@ jobs:
 
       - name: Run tests
         run: mvn test
+        working-directory: BankingSystem  # 👈 Again, use correct folder
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v3
         with:
           name: test-results
-          path: target/surefire-reports/
+          path: BankingSystem/target/surefire-reports/  # 👈 Correct path to reports
 
   deploy:
     name: 🚀 Simulate Deployment
@@ -58,5 +60,5 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Deploy step (simulated)
-        run: echo "✅ Tests passed. Application ready for deployment!"
+      - name: Simulate Deploy
+        run: echo "✅ Tests passed. Ready to deploy!"
