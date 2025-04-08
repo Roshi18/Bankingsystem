@@ -38,7 +38,7 @@ jobs:
 
       - name: Deploy
         run: |
-          echo "🚀 Deploying artifact..."
+          echo "Deploying artifact..."
           ls BankingSystem/target/
           # Example deployment: copy JAR to server
           # scp BankingSystem/target/*.jar user@yourserver:/deploy/path
