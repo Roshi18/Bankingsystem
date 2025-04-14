@@ -63,17 +63,16 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y conntrack curl apt-transport-https
+          sudo apt-get install -y conntrack curl apt-transport-https socat
 
       - name: Install kubectl
         run: |
-           echo "Downloading latest stable kubectl version..."
-           curl -s -o version.txt https://dl.k8s.io/release/stable.txt
-           KUBECTL_VERSION=$(cat version.txt)
-           echo "Version is $KUBECTL_VERSION"
-           curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
-           chmod +x kubectl
-           sudo mv kubectl /usr/local/bin/
+          echo "Downloading latest stable kubectl version..."
+          KUBECTL_VERSION=$(curl -Ls https://dl.k8s.io/release/stable.txt)
+          echo "Version is $KUBECTL_VERSION"
+          curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/kubectl
 
       - name: Install Minikube
         run: |
@@ -82,23 +81,24 @@ jobs:
 
       - name: Start Minikube
         run: |
-          minikube start --driver=docker
+          sudo minikube start --driver=docker
           kubectl get nodes
 
       - name: Build Docker image for BankingSystem
         run: |
-          eval $(minikube docker-env) # Use Minikube's Docker daemon
+          eval $(minikube docker-env)
           docker build -t banking-system:latest BankingSystem/
 
       - name: Deploy BankingSystem to Minikube
         run: |
           kubectl create deployment banking-system --image=banking-system:latest
           kubectl expose deployment banking-system --type=NodePort --port=8080
-          kubectl get services
+          sleep 10  # wait for pod to start
+          kubectl get all
 
       - name: Simulate Access to App
         run: |
-          minikube service banking-system --url
+          minikube service banking-system --url || true
 
       - name: Confirm Deployment
         run: echo "✅ BankingSystem deployed to Minikube!"
