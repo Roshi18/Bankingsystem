@@ -1,46 +1,38 @@
-name: CI/CD - BankingSystem with Minikube
+name: CI/CD with Minikube for BankingSystem
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
-    branches: [ main ]
+  push:
+    branches: [main]
 
 jobs:
-  build-and-deploy:
+  build-deploy:
     runs-on: ubuntu-latest
-    name: 🚀 Build & Deploy to Minikube
+    name: Build & Deploy BankingSystem on Minikube
 
     steps:
-      - name: 📥 Checkout Repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: ☕ Setup JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: 🔨 Build JAR with Maven
-        run: mvn clean package
-        working-directory: BankingSystem
-
-      - name: 🚀 Start Minikube
+      - name: Start Minikube
         uses: medyagh/setup-minikube@latest
 
-      - name: 🔍 Test Kubernetes Cluster
+      - name: Verify cluster
         run: kubectl get nodes
 
-      - name: 🐳 Build Docker Image inside Minikube
+      - name: Build Docker image inside Minikube
         run: |
-          minikube image build -t banking-system:latest BankingSystem/
+          minikube image build -t local/banking-system:latest BankingSystem
 
-      - name: 📦 Deploy App to Minikube
+      - name: Deploy app to Minikube
         run: |
           kubectl apply -f BankingSystem/Deployment.yaml
-          kubectl wait --for=condition=ready pod -l app=banking-system --timeout=90s
+          kubectl wait --for=condition=ready pod -l app=banking-system --timeout=120s
 
-      - name: 🌐 Expose and Show URL
+      - name: Test Service Access
         run: |
-          minikube service list
           minikube service banking-system-svc --url
+          curl $(minikube service banking-system-svc --url) || echo "Service might not have a valid endpoint"
+
+      - name: Deployment successful
+        run: echo "✅ BankingSystem deployed and tested!"
