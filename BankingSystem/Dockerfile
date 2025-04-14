@@ -1,5 +1,8 @@
+# Use OpenJDK image
 FROM openjdk:17-jdk-slim
-WORKDIR /app
-COPY target/BankingSystem-1.0-SNAPSHOT.jar app.jar
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+
+# Copy source
+COPY target/BankingSystem-*.jar app.jar
+
+# Run the jar file
+ENTRYPOINT ["java", "-jar", "/app.jar"]
