@@ -1,0 +1,46 @@
+name: CI/CD - BankingSystem with Minikube
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    name: 🚀 Build & Deploy to Minikube
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ☕ Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: 🔨 Build JAR with Maven
+        run: mvn clean package
+        working-directory: BankingSystem
+
+      - name: 🚀 Start Minikube
+        uses: medyagh/setup-minikube@latest
+
+      - name: 🔍 Test Kubernetes Cluster
+        run: kubectl get nodes
+
+      - name: 🐳 Build Docker Image inside Minikube
+        run: |
+          minikube image build -t banking-system:latest BankingSystem/
+
+      - name: 📦 Deploy App to Minikube
+        run: |
+          kubectl apply -f BankingSystem/Deployment.yaml
+          kubectl wait --for=condition=ready pod -l app=banking-system --timeout=90s
+
+      - name: 🌐 Expose and Show URL
+        run: |
+          minikube service list
+          minikube service banking-system-svc --url
