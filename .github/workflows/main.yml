@@ -46,13 +46,13 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4   # ✅ updated version
+        uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: BankingSystem/target/surefire-reports/
 
   deploy:
-    name: 🚀 Simulate Deployment
+    name: 🚀 Simulate Deployment with Minikube
     needs: test
     runs-on: ubuntu-latest
 
@@ -60,5 +60,36 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Simulate Deploy
-        run: echo "✅ Tests passed. Ready to deploy!"
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y conntrack curl apt-transport-https
+
+      - name: Install kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+
+      - name: Install Minikube
+        run: |
+          curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+          sudo install minikube-linux-amd64 /usr/local/bin/minikube
+
+      - name: Start Minikube
+        run: |
+          minikube start --driver=docker
+          kubectl get nodes
+
+      - name: Deploy Sample Java App (Echo Server)
+        run: |
+          kubectl create deployment hello-java-app --image=kicbase/echo-server:1.0
+          kubectl expose deployment hello-java-app --type=NodePort --port=8080
+          kubectl get services
+
+      - name: Simulate Access to App
+        run: |
+          minikube service hello-java-app --url
+
+      - name: Confirm Deployment
+        run: echo "✅ Sample app deployed to Minikube!"
