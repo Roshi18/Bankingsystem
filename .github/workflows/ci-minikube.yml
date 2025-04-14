@@ -52,7 +52,7 @@ jobs:
           path: BankingSystem/target/surefire-reports/
 
   deploy:
-    name: 🚀 Simulate Deployment with Minikube
+    name: 🚀 Deploy BankingSystem to Minikube
     needs: test
     runs-on: ubuntu-latest
 
@@ -67,11 +67,9 @@ jobs:
 
       - name: Install kubectl
         run: |
-             KUBECTL_VERSION=$(curl -s https://dl.k8s.io/release/stable.txt)
-             curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
-             chmod +x kubectl
-             sudo mv kubectl /usr/local/bin/
-
+          curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
 
       - name: Install Minikube
         run: |
@@ -83,15 +81,20 @@ jobs:
           minikube start --driver=docker
           kubectl get nodes
 
-      - name: Deploy Sample Java App (Echo Server)
+      - name: Build Docker image for BankingSystem
         run: |
-          kubectl create deployment hello-java-app --image=kicbase/echo-server:1.0
-          kubectl expose deployment hello-java-app --type=NodePort --port=8080
+          eval $(minikube docker-env) # Use Minikube's Docker daemon
+          docker build -t banking-system:latest BankingSystem/
+
+      - name: Deploy BankingSystem to Minikube
+        run: |
+          kubectl create deployment banking-system --image=banking-system:latest
+          kubectl expose deployment banking-system --type=NodePort --port=8080
           kubectl get services
 
       - name: Simulate Access to App
         run: |
-          minikube service hello-java-app --url
+          minikube service banking-system --url
 
       - name: Confirm Deployment
-        run: echo "✅ Sample app deployed to Minikube!"
+        run: echo "✅ BankingSystem deployed to Minikube!"
